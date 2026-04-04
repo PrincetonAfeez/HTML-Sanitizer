@@ -151,7 +151,78 @@ def danger_score(findings: list[dict]) -> int:
     weights = {"critical": 25, "high": 15, "medium": 8, "low": 2, "info": 1}
     return min(sum(weights.get(item.get("severity", "info"), 1) for item in findings), 100)
 
+def sanitize_html(input_text: str, mode: str = "plain", allowed_tags: list[str] | None = None) -> tuple[str, list[dict], dict]:
+    findings = []
+    safe_tags = DEFAULT_SAFE_TAGS.copy()
+    if allowed_tags is not None:
+        safe_tags = {tag: DEFAULT_SAFE_TAGS.get(tag, []) for tag in allowed_tags if tag}
 
+    text = input_text
+    decoded = html.unescape(text)
+    if decoded != text:
+        findings.append({"severity": "low", "category": "entity_decode", "line": 1, "message": "Decoded HTML entities before scanning."})
+        text = decoded
+    if "\x00" in text:
+        findings.append({"severity": "medium", "category": "null_byte", "line": 1, "message": "Removed null bytes used for obfuscation."})
+        text = text.replace("\x00", "")
+
+    previous = None
+    loop_count = 0
+    while text != previous and loop_count < 5:
+        previous = text
+        loop_count += 1
+        text = replace_pattern(text, COMMENT_PATTERN, "", findings, "comment", "low", "Removed HTML comment.")
+        text = replace_pattern(text, SCRIPT_PATTERN, "", findings, "script_tag", "critical", "Removed script tag and contents.")
+        text = replace_pattern(text, STYLE_PATTERN, "", findings, "style_block", "medium", "Removed style block.")
+        text = replace_pattern(text, BLOCKED_TAGS_PATTERN, "", findings, "blocked_tag", "critical", "Removed blocked tag container.")
+        text = replace_pattern(text, META_REFRESH_PATTERN, "", findings, "meta_refresh", "critical", "Removed meta refresh tag.")
+        text = replace_pattern(
+            text,
+            EVENT_HANDLER_PATTERN,
+            "",
+            findings,
+            "event_handler",
+            "high",
+            "Removed inline event handler: {content}",
+        )
+
+    if mode == "safe":
+        output = rebuild_safe_html(text, safe_tags, findings)
+    else:
+        output = strip_all_tags(text)
+
+    stats = {
+        "mode": mode,
+        "before_characters": len(input_text),
+        "after_characters": len(output),
+        "characters_removed": max(len(input_text) - len(output), 0),
+        "danger_score": danger_score(findings),
+        "passes": loop_count,
+    }
+    return output, findings, stats
+
+def run(input_text: str, config: dict | None = None) -> dict:
+    config = config or {}
+    mode = config.get("mode", "plain")
+    allowed_tags = config.get("allowed_tags")
+    output, findings, stats = sanitize_html(input_text, mode=mode, allowed_tags=allowed_tags)
+
+    summary = (
+        f"Sanitized HTML in {mode} mode. Removed {stats['characters_removed']} characters "
+        f"with danger score {stats['danger_score']}."
+    )
+
+    return {
+        "module_name": "html",
+        "title": "DataGuard HTML Sanitizer Report",
+        "output": output,
+        "findings": findings,
+        "warnings": [] if not findings else [f"Removed or modified {len(findings)} HTML threat indicators."],
+        "errors": [],
+        "stats": stats,
+        "metadata": {"source": config.get("source_name", "<input>"), "mode": mode},
+        "summary": summary,
+    }
 
 
 
