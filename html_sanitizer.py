@@ -69,6 +69,15 @@ DEFAULT_SAFE_TAGS = {
 def line_number_for_position(text: str, position: int) -> int:
     return text.count("\n", 0, max(position, 0)) + 1
 
+def add_finding(findings: list[dict], text: str, position: int, category: str, severity: str, message: str) -> None:
+    findings.append(
+        {
+            "severity": severity,
+            "category": category,
+            "line": line_number_for_position(text, position),
+            "message": message,
+        }
+    )
 
 
 
