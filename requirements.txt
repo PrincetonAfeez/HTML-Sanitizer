@@ -1,0 +1,15 @@
+# -------------------------------------------------------------------------------
+# HTML-Sanitizer Requirements
+# -------------------------------------------------------------------------------
+# This project uses the Python Standard Library and has NO external 
+# runtime dependencies. This ensures a zero-attack surface for 
+# supply-chain vulnerabilities.
+# -------------------------------------------------------------------------------
+
+# Python Version Requirement
+# Compatible with Python 3.10+
+
+# Optional: Development & Testing (Uncomment to install)
+# pytest==8.0.0          # For running the test suite
+# mypy==1.8.0            # For static type checking
+# black==24.1.1         # For code formatting
