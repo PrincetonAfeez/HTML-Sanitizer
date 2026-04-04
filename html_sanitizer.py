@@ -79,6 +79,13 @@ def add_finding(findings: list[dict], text: str, position: int, category: str, s
         }
     )
 
+def replace_pattern(text: str, pattern: re.Pattern, replacement: str, findings: list[dict], category: str, severity: str, message_template: str) -> str:
+    def replacement_function(match: re.Match) -> str:
+        # Log the specific content found (truncated for the report)
+        add_finding(findings, text, match.start(), category, severity, message_template.format(content=match.group(0)[:80]))
+        return replacement
+
+    return pattern.sub(replacement_function, text)
 
 
 
