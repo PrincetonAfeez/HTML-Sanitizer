@@ -144,6 +144,9 @@ def rebuild_safe_html(text: str, safe_tags: dict, findings: list[dict]) -> str:
 
     return TAG_PATTERN.sub(replacement_function, text)
 
+def strip_all_tags(text: str) -> str:
+    without_tags = re.sub(r"<[^>]+>", "", text)
+    return html.unescape(without_tags)
 
 
 
