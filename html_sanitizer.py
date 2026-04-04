@@ -66,6 +66,10 @@ DEFAULT_SAFE_TAGS = {
     "img": ["src", "alt"],
 }
 
+def line_number_for_position(text: str, position: int) -> int:
+    return text.count("\n", 0, max(position, 0)) + 1
+
+
 
 
 
