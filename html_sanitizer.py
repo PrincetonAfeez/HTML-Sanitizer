@@ -102,6 +102,31 @@ def validate_url(raw_value: str, attribute_name: str) -> tuple[str, bool]:
         return "#removed", False
     return decoded, True
 
+def sanitize_allowed_attributes(tag_name: str, raw_attrs: str, findings: list[dict], source_text: str, start_position: int, safe_tags: dict) -> str:
+    kept = []
+    allowed_attributes = safe_tags.get(tag_name, [])
+    for match in ATTRIBUTE_PATTERN.finditer(raw_attrs):
+        attribute_name = match.group(1).lower()
+        raw_value = next((group for group in match.groups()[1:] if group is not None), "")        if attribute_name.startswith("on"):
+            add_finding(findings, source_text, start_position, "event_handler", "high", f"Removed event handler {attribute_name}.")
+            continue
+        if attribute_name == "style":
+            if STYLE_DANGER_PATTERN.search(raw_value):
+                add_finding(findings, source_text, start_position, "css_attack", "medium", "Removed dangerous inline style content.")
+            continue
+        if attribute_name not in allowed_attributes:
+            if attribute_name not in {"", "/"}:
+                add_finding(findings, source_text, start_position, "attribute_strip", "low", f"Removed attribute {attribute_name} from <{tag_name}>.")
+            continue
+        if attribute_name in {"href", "src"}:
+            safe_value, is_safe = validate_url(raw_value, attribute_name)
+            if not is_safe:
+                add_finding(findings, source_text, start_position, "dangerous_url", "critical", f"Replaced dangerous {attribute_name} value on <{tag_name}>.")
+            kept.append(f'{attribute_name}="{html.escape(safe_value, quote=True)}"')
+            continue
+        kept.append(f'{attribute_name}="{html.escape(raw_value, quote=True)}"')
+    return (" " + " ".join(kept)) if kept else ""
+
 
 
 
