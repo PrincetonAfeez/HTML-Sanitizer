@@ -127,6 +127,22 @@ def sanitize_allowed_attributes(tag_name: str, raw_attrs: str, findings: list[di
         kept.append(f'{attribute_name}="{html.escape(raw_value, quote=True)}"')
     return (" " + " ".join(kept)) if kept else ""
 
+def rebuild_safe_html(text: str, safe_tags: dict, findings: list[dict]) -> str:
+    def replacement_function(match: re.Match) -> str:
+        tag_name = match.group("tag").lower()
+        closing = bool(match.group("closing"))
+        raw_attrs = match.group("attrs") or ""
+        if tag_name not in safe_tags:
+            add_finding(findings, text, match.start(), "tag_strip", "low", f"Removed disallowed tag <{tag_name}>.")
+            return ""
+        if closing:
+            return f"</{tag_name}>"
+        safe_attrs = sanitize_allowed_attributes(tag_name, raw_attrs, findings, text, match.start(), safe_tags)
+        if tag_name in SELF_CLOSING_TAGS:
+            return f"<{tag_name}{safe_attrs}>"
+        return f"<{tag_name}{safe_attrs}>"
+
+    return TAG_PATTERN.sub(replacement_function, text)
 
 
 
