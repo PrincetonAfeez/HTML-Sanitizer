@@ -87,6 +87,21 @@ def replace_pattern(text: str, pattern: re.Pattern, replacement: str, findings: 
 
     return pattern.sub(replacement_function, text)
 
+def validate_url(raw_value: str, attribute_name: str) -> tuple[str, bool]:
+    decoded = html.unescape(raw_value).replace("\x00", "").strip()
+    compact = re.sub(r"\s+", "", decoded).lower()
+    allowed = ("http:", "https:", "mailto:")
+    if compact.startswith(("javascript:", "data:", "vbscript:")):
+        return "#removed", False
+    if compact.startswith("//"):
+        return "#removed", False
+    if ":" in compact and not compact.startswith(allowed):
+        return "#removed", False
+    
+    if attribute_name == "src" and compact.startswith("mailto:"):
+        return "#removed", False
+    return decoded, True
+
 
 
 
