@@ -25,6 +25,14 @@ BLOCKED_TAGS_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+META_REFRESH_PATTERN = re.compile(r"<meta\b[^>]*http-equiv\s*=\s*['\"]?refresh['\"]?[^>]*>", re.IGNORECASE)
+
+EVENT_HANDLER_PATTERN = re.compile(r"\s+on[a-z0-9_-]+\s*=\s*(?:\"[^\"]*\"|'[^']*'|`[^`]*`|[^\s>]+)", re.IGNORECASE)
+
+STYLE_DANGER_PATTERN = re.compile(
+    r"expression\s*\(|url\s*\(\s*javascript:|url\s*\(\s*['\"]?data:|-moz-binding|behavior\s*:",
+    re.IGNORECASE,
+)
 
 
 def main() -> None:
