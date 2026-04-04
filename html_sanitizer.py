@@ -41,6 +41,30 @@ ATTRIBUTE_PATTERN = re.compile(
     re.DOTALL,
 )
 
+DEFAULT_SAFE_TAGS = {
+    "p": [],
+    "b": [],
+    "i": [],
+    "u": [],
+    "strong": [],
+    "em": [],
+    "br": [],
+    "hr": [],
+    "ul": [],
+    "ol": [],
+    "li": [],
+    "h1": [],
+    "h2": [],
+    "h3": [],
+    "h4": [],
+    "h5": [],
+    "h6": [],
+    "blockquote": [],
+    "pre": [],
+    "code": [],
+    "a": ["href"],
+    "img": ["src", "alt"],
+}
 
 
 
