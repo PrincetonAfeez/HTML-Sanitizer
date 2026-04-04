@@ -224,7 +224,76 @@ def run(input_text: str, config: dict | None = None) -> dict:
         "summary": summary,
     }
 
+def _parse_allowed_tags(raw: str | None) -> list[str] | None:
+    if raw is None or not raw.strip():
+        return None
+    return [t.strip().lower() for t in raw.split(",") if t.strip()]
 
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Strip dangerous HTML; optional allowlisted safe HTML mode.")
+    src = parser.add_mutually_exclusive_group(required=True)
+    src.add_argument("--input", "-i", help="HTML string to sanitize")
+    src.add_argument("--file", "-f", type=Path, help="Path to a .html or .txt file (UTF-8)")
+    parser.add_argument("--mode", choices=("plain", "safe"), default="plain", help="plain = text only; safe = allowlisted tags")
+    parser.add_argument("--allow", help="Comma-separated tag names for safe mode (replaces default allowlist)")
+    parser.add_argument("--output", "-o", type=Path, help="Write cleaned output to this file (UTF-8)")
+    parser.add_argument("--report", action="store_true", help="Print JSON findings and stats to stderr")
+    parser.add_argument(
+        "--show-diff",
+        action="store_true",
+        help="Print before/after character counts to stderr",
+    )
+    args = parser.parse_args(argv)
+
+    if args.input is not None:
+        input_text = args.input
+    else:
+        try:
+            input_text = args.file.read_text(encoding="utf-8")
+        except OSError as exc:
+            raise InputError(f"Cannot read file: {args.file}") from exc
+
+    allowed_tags = _parse_allowed_tags(args.allow)
+    result = run(
+        input_text,
+        {
+            "mode": args.mode,
+            "allowed_tags": allowed_tags,
+            "source_name": str(args.file) if args.file else "<--input>",
+        },
+    )
+
+    out = result["output"]
+    if args.output is not None:
+        try:
+            args.output.write_text(out, encoding="utf-8")
+        except OSError as exc:
+            raise InputError(f"Cannot write file: {args.output}") from exc
+    else:
+        sys.stdout.write(out)
+        if out and not out.endswith("\n"):
+            sys.stdout.write("\n")
+
+    if args.show_diff:
+        st = result["stats"]
+        print(
+            f"Characters: {st['before_characters']} -> {st['after_characters']} "
+            f"(removed {st['characters_removed']}, danger_score={st['danger_score']}, passes={st['passes']})",
+            file=sys.stderr,
+        )
+
+    if args.report:
+        payload = {"findings": result["findings"], "stats": result["stats"], "summary": result["summary"]}
+        print(json.dumps(payload, indent=2), file=sys.stderr)
+
+    return 0
+
+if __name__ == "__main__":
+    try:
+        raise SystemExit(main())
+    except InputError as exc:
+        print(str(exc), file=sys.stderr)
+        raise SystemExit(1) from exc
 
 
 
