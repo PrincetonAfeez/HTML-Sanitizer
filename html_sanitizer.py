@@ -34,6 +34,27 @@ STYLE_DANGER_PATTERN = re.compile(
     re.IGNORECASE,
 )
 
+TAG_PATTERN = re.compile(r"<(?P<closing>/)?(?P<tag>[A-Za-z0-9]+)(?P<attrs>[^>]*)>", re.IGNORECASE | re.DOTALL)
+
+ATTRIBUTE_PATTERN = re.compile(
+    r"([^\s=<>'\"`/]+)(?:\s*=\s*(?:\"([^\"]*)\"|'([^']*)'|`([^`]*)`|([^\s>]+)))?",
+    re.DOTALL,
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def main() -> None:
     pass
