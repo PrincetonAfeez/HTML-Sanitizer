@@ -16,6 +16,14 @@ COMMENT_PATTERN = re.compile(
     re.IGNORECASE | re.DOTALL,
 )
 
+SCRIPT_PATTERN = re.compile(r"<script\b[^>]*>.*?</script\s*>", re.IGNORECASE | re.DOTALL)
+
+STYLE_PATTERN = re.compile(r"<style\b[^>]*>.*?</style\s*>", re.IGNORECASE | re.DOTALL)
+
+BLOCKED_TAGS_PATTERN = re.compile(
+    r"<(?:iframe|object|embed|applet|form|base)\b[^>]*>.*?</(?:iframe|object|embed|applet|form|base)\s*>|<(?:iframe|object|embed|applet|form|base)\b[^>]*/?>",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 
