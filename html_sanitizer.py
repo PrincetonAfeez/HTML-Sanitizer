@@ -147,6 +147,10 @@ def rebuild_safe_html(text: str, safe_tags: dict, findings: list[dict]) -> str:
 def strip_all_tags(text: str) -> str:
     without_tags = re.sub(r"<[^>]+>", "", text)
     return html.unescape(without_tags)
+def danger_score(findings: list[dict]) -> int:
+    weights = {"critical": 25, "high": 15, "medium": 8, "low": 2, "info": 1}
+    return min(sum(weights.get(item.get("severity", "info"), 1) for item in findings), 100)
+
 
 
 
