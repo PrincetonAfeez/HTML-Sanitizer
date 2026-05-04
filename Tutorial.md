@@ -211,9 +211,9 @@ DEFAULT_SAFE_TAGS = {
     "a": ["href"],
     "img": ["src", "alt"],
 }
-
-SELF_CLOSING_TAGS = {"br", "hr", "img"}
 ```
+
+Void elements in this allowlist are `br`, `hr`, and `img`. The real module does not use a separate constant for them; when rebuilding tags, they use the same HTML5 start-tag shape as everything else (`<br>`, `<img …>`), not XML-style `/>`.
 
 ### Why an allowlist is useful
 
@@ -390,12 +390,13 @@ def rebuild_safe_html(text: str, safe_tags: dict, findings: list[dict]) -> str:
 
         safe_attrs = sanitize_allowed_attributes(tag_name, raw_attrs, findings, text, match.start(), safe_tags)
 
-        if tag_name in SELF_CLOSING_TAGS:
-            return f"<{tag_name}{safe_attrs}>"
+        # Void elements (br, hr, img) use the same HTML5 start-tag form; no separate branch needed.
         return f"<{tag_name}{safe_attrs}>"
 
     return TAG_PATTERN.sub(replacement_function, text)
 ```
+
+An older version sometimes split “self-closing” vs “normal” branches, but both returned the same string. Keeping one `return` avoids dead code; browsers treat `<br>`, `<hr>`, and `<img …>` correctly without `/>`.
 
 ### Why rebuild instead of editing in place?
 
