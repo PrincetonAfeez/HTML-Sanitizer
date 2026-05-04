@@ -75,9 +75,6 @@ DEFAULT_SAFE_TAGS = {
     "img": ["src", "alt"],
 }
 
-# Tags that do not require a closing tag in standard HTML
-SELF_CLOSING_TAGS = {"br", "hr", "img"}
-
 
 # Map a character position to its human-readable line number in the source text
 def line_number_for_position(text: str, position: int) -> int:
@@ -178,9 +175,7 @@ def rebuild_safe_html(text: str, safe_tags: dict, findings: list[dict]) -> str:
             return f"</{tag_name}>"
         # Sanitize attributes for the opening tag
         safe_attrs = sanitize_allowed_attributes(tag_name, raw_attrs, findings, text, match.start(), safe_tags)
-        # Rebuild the tag; handle self-closing vs standard tags
-        if tag_name in SELF_CLOSING_TAGS:
-            return f"<{tag_name}{safe_attrs}>"
+        # Void elements (br, hr, img) use the same HTML5 start-tag form <br>, <img ...>; no XML />.
         return f"<{tag_name}{safe_attrs}>"
 
     return TAG_PATTERN.sub(replacement_function, text)
